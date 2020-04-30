@@ -16,7 +16,7 @@ namespace LiteProfile
 
         private static readonly string NotSuspect = string.Empty;
 
-        private static Dictionary<string, LiteProfilerLog> Ledger = new Dictionary<string, LiteProfilerLog>();
+        private static Dictionary<string, LiteProfilerLog> Diary = new Dictionary<string, LiteProfilerLog>();
         private static Stopwatch Stopper;
 
 
@@ -27,7 +27,7 @@ namespace LiteProfile
         public static void Reset()
         {
             Stopper = Stopwatch.StartNew();
-            Ledger.Clear();
+            Diary.Clear();
         }
 
 
@@ -74,12 +74,12 @@ namespace LiteProfile
             string profileAddress;
             if (TryGetProfileAddress(out profileAddress))
             {
-                if (!Ledger.ContainsKey(profileAddress))
+                if (!Diary.ContainsKey(profileAddress))
                 {
-                    Ledger.Add(profileAddress, new LiteProfilerLog());
+                    Diary.Add(profileAddress, new LiteProfilerLog());
                 }
 
-                Ledger[profileAddress].StopperStartTimes.Push(Stopper.ElapsedMilliseconds);
+                Diary[profileAddress].StopperStartTimes.Push(Stopper.ElapsedMilliseconds);
             }
         }
 
@@ -94,10 +94,10 @@ namespace LiteProfile
             string profileAddress;
             if (TryGetProfileAddress(out profileAddress))
             {
-                if (Ledger.Count > 0)
+                if (Diary.Count > 0)
                 {
-                    long startTime = Ledger[profileAddress].StopperStartTimes.Pop();
-                    Ledger[profileAddress].MeasuredTimesSpent.Add(stopTime - startTime);
+                    long startTime = Diary[profileAddress].StopperStartTimes.Pop();
+                    Diary[profileAddress].MeasuredTimesSpent.Add(stopTime - startTime);
                 }
             }
         }
@@ -137,12 +137,12 @@ namespace LiteProfile
             LiteProfilerReport report = new LiteProfilerReport()
             {
                 TotalMeasured = (Stopper != null) ? Stopper.ElapsedMilliseconds : 0,
-                Rows = new List<LiteProfilerReportRow>()
+                Records = new List<LiteProfilerReportRecord>()
             };
 
-            foreach (KeyValuePair<string, LiteProfilerLog> entry in Ledger)
+            foreach (KeyValuePair<string, LiteProfilerLog> entry in Diary)
             {
-                report.Rows.Add(new LiteProfilerReportRow()
+                report.Records.Add(new LiteProfilerReportRecord()
                 {
                     Address = entry.Key,
                     CallsCount = entry.Value.MeasuredTimesSpent.Count,

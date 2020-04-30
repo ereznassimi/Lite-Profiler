@@ -46,7 +46,7 @@ namespace LiteProfile
     /// <summary>
     /// Completed measurements for each specific method
     /// </summary>
-    public struct LiteProfilerReportRow
+    public struct LiteProfilerReportRecord
     {
         public string Address { get; set; }
         public int CallsCount { get; set; }
@@ -60,7 +60,7 @@ namespace LiteProfile
     public class LiteProfilerReport
     {
         public long TotalMeasured { get; set; }
-        public List<LiteProfilerReportRow> Rows { get; set; }
+        public List<LiteProfilerReportRecord> Records { get; set; }
 
         public const int Column_Width_Address = -40;
         public const int Column_Width_Calls = 13;
@@ -84,12 +84,12 @@ namespace LiteProfile
             builder.Append($"{"100.00 %", Column_Width_Percent}"); 
 
             builder.AppendLine();
-            foreach (LiteProfilerReportRow row in this.Rows)
+            foreach (LiteProfilerReportRecord record in this.Records)
             {
-                builder.Append($"{row.Address, Column_Width_Address}");
-                builder.Append($"{row.CallsCount, Column_Width_Calls}");
-                builder.Append($"{row.TotalSpent, Column_Width_Age_ms}");
-                builder.Append($"{Decimal.Divide(row.TotalSpent, this.TotalMeasured) * 100, Column_Width_Percent - 2:N2}{" %"}");
+                builder.Append($"{record.Address, Column_Width_Address}");
+                builder.Append($"{record.CallsCount, Column_Width_Calls}");
+                builder.Append($"{record.TotalSpent, Column_Width_Age_ms}");
+                builder.Append($"{Decimal.Divide(record.TotalSpent, this.TotalMeasured) * 100, Column_Width_Percent - 2:N2}{" %"}");
                 builder.AppendLine();
             }
 
