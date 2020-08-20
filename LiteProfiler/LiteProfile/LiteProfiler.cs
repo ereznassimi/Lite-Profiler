@@ -18,13 +18,6 @@ namespace LiteProfile
         /// </summary>
         public static bool ShouldFilterClasses;
 
-        /// <summary>
-        /// Meaningful readable constants
-        /// </summary>
-        public const bool DoFilterClasses = true;
-        public const bool DoNotFilterClasses = false;
-        public const bool NeedsFileInfo = true;
-
 
         private static Dictionary<string, LiteProfilerLog> Diary = new Dictionary<string, LiteProfilerLog>();
         private static Stopwatch Stopper;
@@ -36,7 +29,7 @@ namespace LiteProfile
         /// Start timer now (important for percentage calculation)
         /// </summary>
         [Conditional("DEBUG")]
-        public static void Reset(bool filterClasses = LiteProfiler.DoNotFilterClasses)
+        public static void Reset(bool filterClasses = false)
         {
             LiteProfiler.Stopper = Stopwatch.StartNew();
             LiteProfiler.Diary.Clear();
@@ -46,7 +39,7 @@ namespace LiteProfile
 
         private static string GetProfileAddress(int frameIndex)
         {
-            StackTrace trace = new StackTrace(LiteProfiler.NeedsFileInfo);
+            StackTrace trace = new StackTrace(fNeedFileInfo: true);
             StackFrame frame = trace.GetFrame(frameIndex);
             MethodBase method = frame.GetMethod();
             string className = method.ReflectedType.Name;

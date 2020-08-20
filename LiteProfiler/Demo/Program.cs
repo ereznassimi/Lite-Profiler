@@ -54,7 +54,7 @@ namespace Demo
 
         public static void Demo_3(long n)
         {
-            LiteProfiler.Reset(LiteProfiler.DoFilterClasses);
+            LiteProfiler.Reset(filterClasses: true);
             using (LiteProfilerAgent agent = new LiteProfilerAgent())
             {
                 long heavy = TimeConsuming.HeavyCalculation(n);
