@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 
 
 namespace LiteProfile
@@ -8,22 +7,12 @@ namespace LiteProfile
     {
         public LiteProfilerAgent()
         {
-            LiteProfiler.StartTiming();
-        }
-
-        [Conditional("DEBUG")]
-        protected virtual void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                LiteProfiler.StopTiming();
-            }
+            LiteProfiler.StartTimer(LiteProfiler.InjectedDepthByAgent);
         }
 
         public void Dispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            LiteProfiler.StopTimer(LiteProfiler.InjectedDepthByAgent);
         }
     }
 }

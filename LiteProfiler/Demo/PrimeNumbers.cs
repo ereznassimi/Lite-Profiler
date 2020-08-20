@@ -35,7 +35,8 @@ namespace Demo
                     if (IsPrime(a))
                     {
                         count++;
-                        Console.WriteLine($"prime # {count} / {n} = {a}");
+                        Console.SetCursorPosition(0, 1);
+                        Console.WriteLine($"prime #{count} / {n} = {a}");
                     }
                     a++;
                 }

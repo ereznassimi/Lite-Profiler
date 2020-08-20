@@ -13,55 +13,51 @@ namespace LiteProfile
         /// </summary>
         public static HashSet<string> SuspiciousClasses { get; set; }
 
+        /// <summary>
+        /// This flag should be used to measure specific classes only
+        /// </summary>
+        public static bool ShouldFilterClasses;
 
-        private static readonly string NotSuspect = string.Empty;
+        /// <summary>
+        /// Meaningful readable constants
+        /// </summary>
+        public const bool DoFilterClasses = true;
+        public const bool DoNotFilterClasses = false;
+        public const bool NeedsFileInfo = true;
+
 
         private static Dictionary<string, LiteProfilerLog> Diary = new Dictionary<string, LiteProfilerLog>();
         private static Stopwatch Stopper;
 
+        private const int InjectedDepthByTimer = 2;
+        internal const int InjectedDepthByAgent = InjectedDepthByTimer + 1;
 
         /// <summary>
         /// Start timer now (important for percentage calculation)
         /// </summary>
         [Conditional("DEBUG")]
-        public static void Reset()
+        public static void Reset(bool filterClasses = LiteProfiler.DoNotFilterClasses)
         {
-            Stopper = Stopwatch.StartNew();
-            Diary.Clear();
+            LiteProfiler.Stopper = Stopwatch.StartNew();
+            LiteProfiler.Diary.Clear();
+            LiteProfiler.ShouldFilterClasses = filterClasses;
         }
 
 
-        private static bool TryGetProfileAddress(out string address)
+        private static string GetProfileAddress(int frameIndex)
         {
-            StackTrace trace = new StackTrace(true);
-            address = NotSuspect;
+            StackTrace trace = new StackTrace(LiteProfiler.NeedsFileInfo);
+            StackFrame frame = trace.GetFrame(frameIndex);
+            MethodBase method = frame.GetMethod();
+            string className = method.ReflectedType.Name;
 
-            // normally following loop should have been used: 
-            // for (int i = 0; i <= trace.FrameCount; ++i)
-            // but loop is changed for performance reasons AND for accurate calculations
-            // 0, 1: current LiteProfiler class level - irrelevant
-            // 2, 3: LiteProfilerAgent level or a real class if an agent is not used
-            // 4: only required when called by StopTiming through an agent
-            // 5, ...: too deep, meaning class is not under investigation
-            for (int i = 2; i <= 4; ++i)
+            if (LiteProfiler.ShouldFilterClasses &&
+                !LiteProfiler.SuspiciousClasses.Contains(method.ReflectedType.Name))
             {
-                StackFrame frame = trace.GetFrame(i);
-                MethodBase method = frame.GetMethod();
-                string className = method.ReflectedType.Name;
-                if (SuspiciousClasses.Contains(method.ReflectedType.Name))
-                {
-                    address = $"{method.ReflectedType.FullName}::{method.Name}";
-                    return true;
-                }
-
-                // making sure to stop measuring wrong higher level classes
-                if (className != "LiteProfilerAgent")
-                {
-                    return false;
-                }
+                return string.Empty;
             }
 
-            return false;
+            return $"{method.ReflectedType.FullName}::{method.Name}";
         }
 
 
@@ -69,17 +65,17 @@ namespace LiteProfile
         /// Start timing an specific part of code: Normally called by an agent measuring a whole function
         /// </summary>
         [Conditional("DEBUG")]
-        public static void StartTiming()
+        internal static void StartTimer(int frameIndex = InjectedDepthByTimer)
         {
-            string profileAddress;
-            if (TryGetProfileAddress(out profileAddress))
+            string profileAddress = LiteProfiler.GetProfileAddress(frameIndex);
+            if (!string.IsNullOrWhiteSpace(profileAddress))
             {
-                if (!Diary.ContainsKey(profileAddress))
+                if (!LiteProfiler.Diary.ContainsKey(profileAddress))
                 {
-                    Diary.Add(profileAddress, new LiteProfilerLog());
+                    LiteProfiler.Diary.Add(profileAddress, new LiteProfilerLog());
                 }
 
-                Diary[profileAddress].StopperStartTimes.Push(Stopper.ElapsedMilliseconds);
+                LiteProfiler.Diary[profileAddress].StopperStartTimes.Push(Stopper.ElapsedMilliseconds);
             }
         }
 
@@ -88,30 +84,30 @@ namespace LiteProfile
         /// Stop timing code: Normally called by an agent measuring a whole function.
         /// </summary>
         [Conditional("DEBUG")]
-        public static void StopTiming()
+        internal static void StopTimer(int frameIndex = InjectedDepthByTimer)
         {
-            long stopTime = Stopper.ElapsedMilliseconds;
-            string profileAddress;
-            if (TryGetProfileAddress(out profileAddress))
+            long stopTime = LiteProfiler.Stopper.ElapsedMilliseconds;
+            string profileAddress = GetProfileAddress(frameIndex);
+            if (!string.IsNullOrWhiteSpace(profileAddress))
             {
-                if (Diary.Count > 0)
+                if (LiteProfiler.Diary.Count > 0)
                 {
-                    long startTime = Diary[profileAddress].StopperStartTimes.Pop();
-                    Diary[profileAddress].MeasuredTimesSpent.Add(stopTime - startTime);
+                    long startTime = LiteProfiler.Diary[profileAddress].StopperStartTimes.Pop();
+                    LiteProfiler.Diary[profileAddress].MeasuredTimesSpent.Add(stopTime - startTime);
                 }
             }
         }
 
 
         /// <summary>
-        /// Create a "chackpoint" in code: designed to fit in a log file
+        /// Create a "checkpoint" in code: designed to fit in a log file
         /// </summary>
         /// <param name="comment">Additional specific info to be recorded</param>
-        /// <returns>A quote showing exaxt time and age since beginning of measurement</returns>
+        /// <returns>A quote showing exact time and age since beginning of measurement</returns>
         public static LiteProfilerQuote GetQuote(string comment)
         {
-            string profileAddress;
-            if (!TryGetProfileAddress(out profileAddress))
+            string profileAddress = LiteProfiler.GetProfileAddress(InjectedDepthByTimer);
+            if (!string.IsNullOrWhiteSpace(profileAddress))
             {
                 return new LiteProfilerQuote()
                 {
@@ -122,16 +118,16 @@ namespace LiteProfile
             return new LiteProfilerQuote()
             {
                 Address = profileAddress,
-                Age = (Stopper != null) ? Stopper.ElapsedMilliseconds : 0,
+                Age = (Stopper != null) ? LiteProfiler.Stopper.ElapsedMilliseconds : 0,
                 Comment = comment
             };
         }
 
 
         /// <summary>
-        /// Create a report of final summry of measurements
+        /// Create a report of final summary of measurements
         /// </summary>
-        /// <returns>Full report of final summry of measurements</returns>
+        /// <returns>Full report of final summary of measurements</returns>
         public static LiteProfilerReport GetReport()
         {
             LiteProfilerReport report = new LiteProfilerReport()

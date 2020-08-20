@@ -72,6 +72,9 @@ namespace LiteProfile
         {
             StringBuilder builder = new StringBuilder();
 
+            builder.Append("================================================================================================");
+            builder.AppendLine();
+
             builder.Append($"{"Function Name", Column_Width_Address}");
             builder.Append($"{"Times Called", Column_Width_Calls}");
             builder.Append($"{"Total CPU [ms]", Column_Width_Age_ms}");
@@ -82,8 +85,8 @@ namespace LiteProfile
             builder.Append($"{1, Column_Width_Calls}");
             builder.Append($"{this.TotalMeasured, Column_Width_Age_ms}");
             builder.Append($"{"100.00 %", Column_Width_Percent}"); 
-
             builder.AppendLine();
+
             foreach (LiteProfilerReportRecord record in this.Records)
             {
                 builder.Append($"{record.Address, Column_Width_Address}");
@@ -92,6 +95,9 @@ namespace LiteProfile
                 builder.Append($"{Decimal.Divide(record.TotalSpent, this.TotalMeasured) * 100, Column_Width_Percent - 2:N2}{" %"}");
                 builder.AppendLine();
             }
+
+            builder.Append("================================================================================================");
+            builder.AppendLine();
 
             return builder.ToString();
         }
